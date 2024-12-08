@@ -10,6 +10,8 @@ const printRequestSchema = new Schema({
   description: String,
   descriptionType: String,
   textDescription: String,
+  status: String,
+  quotationAmount: Number,
   // If you handle audio, store audio info as well if needed (like filename or URL)
   // audioDescription: { type: String, required: false },
   
