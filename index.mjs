@@ -1,19 +1,30 @@
-const express = require('express');
-const multer = require('multer');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const path = require('path');
-const File = require('./models/File');
-const PrintRequest = require('./models/PrintRequest');
+import express from 'express';
+import multer from 'multer';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import File from './models/File.mjs';
+import PrintRequest from './models/PrintRequest.mjs';
+import paymentRoutes from './routes/payment.mjs';
+import equipmentRoutes from './routes/equipments.mjs';
+
+
 
 const app = express();
 const PORT = 3010;
+
+// Add this near the top of your file, after the imports
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(paymentRoutes);
+
+app.use('/equipments', equipmentRoutes);
 
 // MongoDB connection
 mongoose.connect('mongodb://127.0.0.1:27017/PrintOrders', {
@@ -72,7 +83,8 @@ app.post('/upload', upload.array('files', 10), async (req, res) => {
       files: fileIds,
       // Initialize status and quotationAmount if needed
       status: 'Pending', // e.g. default
-      quotationAmount: null
+      quotationAmount: null,
+      paymentStatus: 'Pending'
     });
 
     const savedRequest = await newRequest.save();
@@ -144,6 +156,33 @@ app.patch('/requests/:id', async (req, res) => {
   }
 });
 
+//update payment status
+app.patch('/requests/:id/payment', async (req, res) => {
+  try {
+    const { paymentStatus } = req.body; // Expecting { "paymentStatus": "Paid" } in the request body
+
+    if (!paymentStatus) {
+      return res.status(400).json({ message: 'Payment status is required' });
+    }
+
+    const updatedRequest = await PrintRequest.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus }, // Use the provided paymentStatus value
+      { new: true } // Ensure the updated document is returned
+    );
+
+    if (!updatedRequest) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    res.json({ message: 'Payment status updated successfully', request: updatedRequest });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update payment status', error: err });
+  }
+});
+
+
 // Add/Update quotation route
 app.patch('/requests/:id/quotation', async (req, res) => {
   try {
@@ -168,3 +207,5 @@ app.patch('/requests/:id/quotation', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+export default app;

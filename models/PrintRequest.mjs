@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const printRequestSchema = new Schema({
@@ -12,6 +12,12 @@ const printRequestSchema = new Schema({
   textDescription: String,
   status: String,
   quotationAmount: Number,
+  paymentStatus: String,
+
+  paymentReference: {
+    type: String,
+    default: null, // Set to null initially
+  },
   // If you handle audio, store audio info as well if needed (like filename or URL)
   // audioDescription: { type: String, required: false },
   
@@ -19,4 +25,4 @@ const printRequestSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('PrintRequest', printRequestSchema);
+export default mongoose.model('PrintRequest', printRequestSchema);
